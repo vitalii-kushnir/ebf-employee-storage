@@ -1,6 +1,8 @@
-import React from "react";
-import axios from "axios";
-import {Link} from "react-router-dom";
+import React from 'react';
+import {Link} from 'react-router-dom';
+import axios from 'axios';
+import CompaniesList from '../components/CompaniesList';
+import Breadcrumb from '../components/Breadcrumb';
 
 class CompaniesPage extends React.Component {
 
@@ -16,16 +18,25 @@ class CompaniesPage extends React.Component {
         this.setState({companies : companies.data});
     }
 
+    async handleDeleteClick(id) {
+        await axios.delete(`/api/company/${id}`);
+        const companies = await axios.get('/api/company');
+        this.setState({companies : companies.data});
+    }
+
     render() {
         return (
             <div>
-                <ol>
-                    {this.state.companies.map(c => (
-                        <li key={c.id}>
-                            <Link to={`/company/${c.id}`}>{c.name}</Link>
-                        </li>
-                    ))}
-                </ol>
+                <div className="row">
+                    <div className="col-8">
+                        <Breadcrumb items={['Companies']}/>
+                    </div>
+                    <div className="col-4">
+                        <Link to="/company/create" className="btn btn-info">Crete New Company</Link>
+                    </div>
+                </div>
+
+                <CompaniesList companies={this.state.companies} onDeleteClick={this.handleDeleteClick.bind(this)}/>
             </div>
         )
     }
