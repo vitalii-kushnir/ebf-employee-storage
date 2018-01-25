@@ -9,12 +9,14 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 @Data
 @Entity
 @NoArgsConstructor
-@Table(name = "company")
+@Table(name = "company",
+        uniqueConstraints=@UniqueConstraint(columnNames={"name"}))
 public class Company {
 
     @Id

@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.dto.AverageSalaryDto;
 import com.example.dto.CompanyCreateDto;
 import com.example.dto.CompanyDto;
 import com.example.exception.ConstraintsViolationException;
@@ -11,11 +12,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,6 +48,8 @@ public class CompanyControllerTest {
     private static final Long COMPANY_ID_1 = 1L;
 
     private static final Long COMPANY_ID_2 = 2L;
+
+    private static final BigDecimal AVERAGE_COMPANY_SALARY = BigDecimal.TEN;
 
     @Mock
     private CompanyService companyService;
@@ -124,6 +129,9 @@ public class CompanyControllerTest {
         mockMvc.perform(delete("/api/company/1"))
                 .andDo(print())
                 .andExpect(status().isOk());
+
+        //then
+        verify(companyService, times(1)).delete(eq(COMPANY_ID_1));
     }
 
     @Test
@@ -136,7 +144,6 @@ public class CompanyControllerTest {
 
         //then
         verify(companyService, times(1)).delete(eq(COMPANY_ID_1));
-
     }
 
     @Test
@@ -163,20 +170,21 @@ public class CompanyControllerTest {
         verify(companyService, times(1)).save(any(Company.class));
     }
 
+
     @Test
-    public void testCreate_ConstraintsViolationException() throws Exception {
+    public void testCreate_DataIntegrityViolationException() throws Exception {
         // given
-        CompanyCreateDto dto = new CompanyCreateDto();
-        String json = mapper.writeValueAsString(dto);
+        Company company = createCompany(null, COMPANY_NAME_2);
+        String json = mapper.writeValueAsString(company);
 
         // when
-        when(companyService.save(any(Company.class))).thenThrow(new ConstraintsViolationException("exception"));
+        when(companyService.save(any(Company.class))).thenThrow(new DataIntegrityViolationException("exception"));
         mockMvc.perform(post("/api/company").contentType(MediaType.APPLICATION_JSON).content(json))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
 
         //then
-        verify(companyService, times(1)).save(any(Company.class));
+        verify(companyService, times(1)).save(eq(company));
     }
 
     @Test
@@ -221,21 +229,49 @@ public class CompanyControllerTest {
     }
 
     @Test
-    public void testUpdate_ConstraintsViolationException() throws Exception {
+    public void testUpdate_DataIntegrityViolationException() throws Exception {
         // given
-        CompanyDto dto = createCompanyDto(COMPANY_ID_1, null);
-        String json = mapper.writeValueAsString(dto);
+        Company company = createCompany(COMPANY_ID_1, COMPANY_NAME_2);
+        String json = mapper.writeValueAsString(company);
 
         // when
-        when(companyService.update(anyLong(), any(Company.class)))
-                .thenThrow(new ConstraintsViolationException("exception"));
+        when(companyService.update(anyLong(), any(Company.class))).thenThrow(new DataIntegrityViolationException("exception"));
         mockMvc.perform(put("/api/company/1").contentType(MediaType.APPLICATION_JSON).content(json))
                 .andDo(print())
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isBadRequest());
+
+        //then
+        verify(companyService, times(1)).update(eq(COMPANY_ID_1), eq(company));
+    }
+
+    @Test
+    public void testGetAverageSalary_withResult() throws Exception {
+        // when
+        when(companyService.getAverageSalary(anyLong())).thenReturn(AVERAGE_COMPANY_SALARY);
+        MvcResult result =mockMvc.perform(get("/api/company/1/average-salary"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn();
+        AverageSalaryDto actual = mapper.readValue(result.getResponse().getContentAsString(), AverageSalaryDto.class);
+
+        //then
+        assertNotNull("result should be not null");
+        assertEquals("result should be correct", AVERAGE_COMPANY_SALARY, actual.getAverageSalary());
+        verify(companyService, times(1)).getAverageSalary(eq(COMPANY_ID_1));
+
+    }
+
+    @Test
+    public void testGetAverageSalary_EntityNotFoundException() throws Exception {
+        // when
+        when(companyService.getAverageSalary(anyLong())).thenThrow(new EntityNotFoundException("not found"));
+        mockMvc.perform(get("/api/company/1/average-salary"))
+                .andDo(print())
+                .andExpect(status().isNotFound())
                 .andReturn();
 
         //then
-        verify(companyService, times(1)).update(eq(COMPANY_ID_1), any(Company.class));
+        verify(companyService, times(1)).getAverageSalary(eq(COMPANY_ID_1));
     }
 
     private Company createCompany(Long id, String name) {

@@ -1,15 +1,20 @@
 package com.example.controller;
 
+import com.example.ApiError;
+import com.example.dto.AverageSalaryDto;
 import com.example.dto.CompanyCreateDto;
 import com.example.dto.CompanyDto;
-import com.example.exception.ConstraintsViolationException;
 import com.example.exception.EntityNotFoundException;
 import com.example.exception.IdMismatchingException;
 import com.example.model.Company;
 import com.example.service.api.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,12 +22,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.validation.Valid;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Controller for company API
+ * Controller for cthe ompany API.
  */
 @Controller
 public class CompanyController {
@@ -51,7 +58,7 @@ public class CompanyController {
      *
      * @param companyId company id
      * @return company DTO
-     * @throws EntityNotFoundException if company does does not exist
+     * @throws EntityNotFoundException if company does not exist
      */
     @GetMapping("/api/company/{companyId}")
     @ResponseBody
@@ -64,7 +71,7 @@ public class CompanyController {
      * Method deletes company with the given id.
      *
      * @param companyId company id
-     * @throws EntityNotFoundException if company does does not exist
+     * @throws EntityNotFoundException if company does not exist
      */
     @DeleteMapping("/api/company/{companyId}")
     @ResponseBody
@@ -77,14 +84,14 @@ public class CompanyController {
      *
      * @param companyId company id
      * @param dto       DTO with new company data
-     * @return
-     * @throws ConstraintsViolationException if new data is not valid
-     * @throws EntityNotFoundException       if company does not exist
+     * @return company DTO
+     * @throws EntityNotFoundException if company does not exist
+     * @throws IdMismatchingException  if Ids in URL and payload are not equal
      */
     @PutMapping("/api/company/{companyId}")
     @ResponseBody
-    public CompanyDto update(@PathVariable("companyId") Long companyId, @RequestBody CompanyDto dto)
-            throws ConstraintsViolationException, EntityNotFoundException, IdMismatchingException {
+    public CompanyDto update(@PathVariable("companyId") Long companyId, @Valid @RequestBody CompanyDto dto)
+            throws EntityNotFoundException, IdMismatchingException {
         Company company = companyService.update(companyId, makeCompany((dto)));
         return makeCompanyDto(company);
     }
@@ -94,13 +101,30 @@ public class CompanyController {
      *
      * @param dto new company DTO
      * @return company DTO
-     * @throws ConstraintsViolationException if new data is not valid
      */
     @PostMapping("/api/company")
     @ResponseBody
-    public CompanyDto create(@RequestBody CompanyCreateDto dto) throws ConstraintsViolationException {
+    public CompanyDto create(@Valid @RequestBody CompanyCreateDto dto) {
         Company company = companyService.save(makeCompany((dto)));
         return makeCompanyDto(company);
+    }
+
+    @GetMapping("/api/company/{companyId}/average-salary")
+    @ResponseBody
+    public AverageSalaryDto getAverageSalary(@PathVariable Long companyId) throws EntityNotFoundException {
+        BigDecimal averageSalary = companyService.getAverageSalary(companyId);
+        return new AverageSalaryDto(averageSalary);
+    }
+
+    /**
+     * Method handles DataIntegrityViolationException.
+     */
+    @ExceptionHandler({ DataIntegrityViolationException.class })
+    @ResponseBody
+    public ResponseEntity<?> handleDataIntegrityViolationException() {
+        ApiError exception = new ApiError(HttpStatus.BAD_REQUEST,
+                "Cannot create a new company. Unique index or primary key violation exception");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception);
     }
 
     private Company makeCompany(CompanyDto dto) {
@@ -128,5 +152,4 @@ public class CompanyController {
                 .map(this::makeCompanyDto)
                 .collect(Collectors.toList());
     }
-
 }

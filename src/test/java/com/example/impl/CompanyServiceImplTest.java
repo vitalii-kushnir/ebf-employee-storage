@@ -5,6 +5,7 @@ import com.example.exception.EntityNotFoundException;
 import com.example.exception.IdMismatchingException;
 import com.example.model.Company;
 import com.example.repository.CompanyRepository;
+import com.example.repository.EmployeeRepository;
 import com.example.service.impl.CompanyServiceImpl;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
@@ -14,6 +15,7 @@ import org.mockito.MockitoAnnotations;
 
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -36,16 +38,20 @@ public class CompanyServiceImplTest {
 
     private static final Long COMPANY_ID_2 = 2L;
 
+    private static final BigDecimal AVERAGE_COMPANY_SALARY = BigDecimal.TEN;
+
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private EmployeeRepository employeeRepository;
 
     private CompanyServiceImpl companyService;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        ValidatorFactory validationFactory = Validation.buildDefaultValidatorFactory();
-        companyService = new CompanyServiceImpl(companyRepository, validationFactory);
+        companyService = new CompanyServiceImpl(companyRepository, employeeRepository);
     }
 
     @Test
@@ -127,19 +133,10 @@ public class CompanyServiceImplTest {
         verify(companyRepository, times(1)).save(eq(newCompany));
     }
 
-    @Test(expected = ConstraintsViolationException.class)
-    public void testSave_withConstraintsViolationException() throws ConstraintsViolationException {
-        //given
-        Company newCompany = createCompany(null, null);
-
-        //when
-        companyService.save(newCompany);
-    }
-
     @Test
     public void testUpdate_withoutExeptions() throws Exception {
         //given
-        Company company = createCompany(COMPANY_ID_1, COMPANY_NAME_1);
+        Company company = createCompany(COMPANY_ID_1, COMPANY_NAME_2);
         Company updatedCompany = createCompany(COMPANY_ID_1, COMPANY_NAME_2);
 
         //when
@@ -164,16 +161,6 @@ public class CompanyServiceImplTest {
         companyService.update(COMPANY_ID_1, company);
     }
 
-    @Test(expected = ConstraintsViolationException.class)
-    public void testUpdate_withConstraintsViolationException() throws Exception {
-        //given
-        Company targetCompany = createCompany(COMPANY_ID_1, null);
-
-        //when
-        when(companyRepository.findOne(any(Long.class))).thenReturn(targetCompany);
-        companyService.update(COMPANY_ID_1, targetCompany);
-    }
-
     @Test(expected = IdMismatchingException.class)
     public void testUpdate_withIdMismatchingException() throws Exception {
         //given
@@ -182,6 +169,30 @@ public class CompanyServiceImplTest {
         //when
         when(companyRepository.findOne(any(Long.class))).thenReturn(null);
         companyService.update(COMPANY_ID_1, company);
+    }
+
+    @Test
+    public void testGetAverageSalary_withResult() throws EntityNotFoundException {
+        //given
+        Company company = createCompany(COMPANY_ID_1, COMPANY_NAME_1);
+
+        //when
+        when(companyRepository.findOne(any(Long.class))).thenReturn(company);
+        when(employeeRepository.getAverageSalaryForCompany(any(Company.class))).thenReturn(AVERAGE_COMPANY_SALARY);
+        BigDecimal actual = companyService.getAverageSalary(COMPANY_ID_1);
+
+        //then
+        assertNotNull("result cannot be null", actual);
+        assertEquals("result should be correct", AVERAGE_COMPANY_SALARY, actual);
+        verify(companyRepository, times(1)).findOne(eq(COMPANY_ID_1));
+        verify(employeeRepository, times(1)).getAverageSalaryForCompany(eq(company));
+    }
+
+    @Test(expected = EntityNotFoundException.class)
+    public void testGetAverageSalary_withEntityNotFoundException() throws Exception {
+        //when
+        when(companyRepository.findOne(any(Long.class))).thenReturn(null);
+        companyService.getAverageSalary(COMPANY_ID_1);
     }
 
     private Company createCompany(Long id, String name) {
