@@ -1,6 +1,9 @@
 import React, {Component} from 'react';
 import axios from "axios/index";
 
+/**
+ * Component for editing information about company.
+ */
 class CompanyForm extends Component {
 
     constructor(props) {
@@ -44,14 +47,21 @@ class CompanyForm extends Component {
         return (
             <form onSubmit={this.onSaveHandler.bind(this)}>
                 <div className="form-group row">
-                    <label htmlFor="name" className="col-sm-2 col-form-label ">Name</label>
-                    <div className="col-sm-10">
+                    <label htmlFor="name" className="col-sm-4 col-form-label text-right">Name</label>
+                    <div className="col-sm-4">
                         <input type="text" className="form-control" id="name"
                                value={this.state.name}
+                               required={true}
                                onChange={this.onNameChange.bind(this)}/>
                     </div>
                 </div>
-                <button>Save Company</button>
+                <div className="form-group row">
+                    <div className="col-sm-4">&nbsp;</div>
+                    <div className="col-sm-4">
+                        <button>Save Company</button>
+                    </div>
+                </div>
+
             </form>
         )
     }
