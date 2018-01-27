@@ -1,0 +1,6 @@
+spring:
+  resources:
+       static-locations: file:///Users/kusha/Desktop/ebf-employee-storage/src/main/resources/static
+  h2:
+   console:
+     enabled: true
