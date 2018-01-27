@@ -10,6 +10,8 @@ import com.example.model.Company;
 import com.example.model.Employee;
 import com.example.service.api.CompanyService;
 import com.example.service.api.EmployeeService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 @Controller
 public class EmployeeController {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmployeeController.class);
+
     private EmployeeService employeeService;
 
     private CompanyService companyService;
@@ -50,6 +54,7 @@ public class EmployeeController {
     @ResponseBody
     public List<EmployeeListDto> findEmployeesByCompany(@PathVariable("companyId") Long companyId)
             throws EntityNotFoundException {
+        LOGGER.info("Retrieving a list of employees in a company with id={}", companyId);
         List<Employee> employees = employeeService.findEmployeesOfCompany(companyId);
         return makeEmployeeListDto(employees);
     }
@@ -64,6 +69,7 @@ public class EmployeeController {
     @GetMapping("/api/employee/{employeeId}")
     @ResponseBody
     public EmployeeDto find(@PathVariable Long employeeId) throws EntityNotFoundException {
+        LOGGER.info("Retrieving an employee by id={}", employeeId);
         Employee employee = employeeService.find(employeeId);
         return makeEmployeeDto(employee);
     }
@@ -74,13 +80,14 @@ public class EmployeeController {
      * @param employeeId company id
      * @param dto        DTO with new employee data
      * @return employee DTO
-     * @throws EntityNotFoundException       if employee does not exist
-     * @throws IdMismatchingException        if Ids in URL and payload are not equal
+     * @throws EntityNotFoundException if employee does not exist
+     * @throws IdMismatchingException  if Ids in URL and payload are not equal
      */
     @PutMapping("/api/employee/{employeeId}")
     @ResponseBody
     public EmployeeDto update(@PathVariable Long employeeId, @Valid @RequestBody EmployeeUpdateDto dto)
             throws EntityNotFoundException, IdMismatchingException {
+        LOGGER.info("Updating of an employee with id={}", employeeId);
         Employee employee = employeeService.update(employeeId, makeEmployee(dto));
         return makeEmployeeDto(employee);
     }
@@ -90,11 +97,12 @@ public class EmployeeController {
      *
      * @param dto new employee DTO
      * @return employee DTO
-     * @throws EntityNotFoundException       if entity does not exist
+     * @throws EntityNotFoundException if entity does not exist
      */
     @PostMapping("/api/employee")
     @ResponseBody
-    public EmployeeDto create(@Valid @RequestBody EmployeeCreateDto dto) throws  EntityNotFoundException {
+    public EmployeeDto create(@Valid @RequestBody EmployeeCreateDto dto) throws EntityNotFoundException {
+        LOGGER.info("Creating of a new employee");
         Employee employee = employeeService.save(makeEmployee(dto));
         return makeEmployeeDto(employee);
     }
@@ -108,6 +116,7 @@ public class EmployeeController {
     @DeleteMapping("/api/employee/{employeeId}")
     @ResponseBody
     public void delete(@PathVariable Long employeeId) throws EntityNotFoundException {
+        LOGGER.info("Deleting of an employee with id={}", employeeId);
         employeeService.delete(employeeId);
     }
 

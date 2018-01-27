@@ -8,6 +8,8 @@ import com.example.exception.EntityNotFoundException;
 import com.example.exception.IdMismatchingException;
 import com.example.model.Company;
 import com.example.service.api.CompanyService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -34,7 +36,9 @@ import java.util.stream.Collectors;
 @Controller
 public class CompanyController {
 
-    CompanyService companyService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompanyController.class);
+
+    private CompanyService companyService;
 
     @Autowired
     public CompanyController(CompanyService companyService) {
@@ -49,6 +53,7 @@ public class CompanyController {
     @GetMapping("/api/company")
     @ResponseBody
     public List<CompanyDto> list() {
+        LOGGER.info("Retrieving a list of companies.");
         List<Company> companies = companyService.list();
         return makeCompanyListDto(companies);
     }
@@ -63,6 +68,7 @@ public class CompanyController {
     @GetMapping("/api/company/{companyId}")
     @ResponseBody
     public CompanyDto find(@PathVariable("companyId") Long companyId) throws EntityNotFoundException {
+        LOGGER.info("Retrieving a company by id={}", companyId);
         Company company = companyService.find(companyId);
         return makeCompanyDto(company);
     }
@@ -76,6 +82,7 @@ public class CompanyController {
     @DeleteMapping("/api/company/{companyId}")
     @ResponseBody
     public void delete(@PathVariable("companyId") Long companyId) throws EntityNotFoundException {
+        LOGGER.info("Deleting a company by id={}", companyId);
         companyService.delete(companyId);
     }
 
@@ -92,6 +99,7 @@ public class CompanyController {
     @ResponseBody
     public CompanyDto update(@PathVariable("companyId") Long companyId, @Valid @RequestBody CompanyDto dto)
             throws EntityNotFoundException, IdMismatchingException {
+        LOGGER.info("Updating a company with id={}", companyId);
         Company company = companyService.update(companyId, makeCompany((dto)));
         return makeCompanyDto(company);
     }

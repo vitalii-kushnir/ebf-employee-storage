@@ -9,11 +9,13 @@ import org.jfairy.producer.person.Address;
 import org.jfairy.producer.person.Person;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
 @Component
+@Profile("develop")
 public class DatabaseLoader implements CommandLineRunner {
 
     private static final int NUMBER_OF_RANDOM_COMPANIES = 5;
