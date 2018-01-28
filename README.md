@@ -12,6 +12,13 @@ npm install
 npm run watch
 mvn spring-boot:run -Drun.profiles=develop
 ```
+For the develop mode you should configure **static-locations** property in the **application.yaml** file. 
+The **path_to_the_project** must be replaced with correct apth:
+```
+spring:
+  resources:
+       static-locations: file:///{path_to_the_project}/ebf-employee-storage/src/main/resources/static
+```
 
 ## Requirement Specification
 
