@@ -1,6 +1,18 @@
 import React from "react";
 import axios from "axios";
 import {Link} from "react-router-dom";
+import Modal from 'react-modal'
+
+const customStyles = {
+    content : {
+        top : '50%',
+        left : '50%',
+        right : 'auto',
+        bottom : 'auto',
+        marginRight : '-50%',
+        transform : 'translate(-50%, -50%)'
+    }
+};
 
 /**
  * Component for rendering a list of employees in a company.
@@ -11,8 +23,17 @@ class CompanyPage extends React.Component {
         super(props);
         this.state = {
             company : {},
-            employees : []
+            employees : [],
+            modalIsOpen : false,
+            avgSalary : 0
         };
+    }
+
+    closeModal() {
+        this.setState({
+            avgSalary : 0,
+            modalIsOpen : false
+        });
     }
 
     async handleDeleteClick(id) {
@@ -21,6 +42,15 @@ class CompanyPage extends React.Component {
         const employees = await axios.get(`/api/employee/company/${companyId}`);
         this.setState({employees : employees.data});
     }
+
+    async handleAvgSalaryClick(id) {
+        const resp = await axios.get(`/api/company/${id}/average-salary`);
+        this.setState({
+            avgSalary : resp.data.averageSalary,
+            modalIsOpen : true
+        });
+    }
+
 
     async componentDidMount() {
         const id = this.props.match.params.id;
@@ -103,7 +133,12 @@ class CompanyPage extends React.Component {
                         <th>#</th>
                         <th>First Name</th>
                         <th>Last Name</th>
-                        <th>&nbsp;</th>
+                        <th className="text-center">
+                            <button onClick={() => {
+                                this.handleAvgSalaryClick(company.id)
+                            }} className="btn btn-outline-info btn-sm">AVG Salary
+                            </button>
+                        </th>
                         <th>&nbsp;</th>
                         <th className="text-center">
                             <Link to={`/company/${company.id}/add-employee`}
@@ -117,6 +152,22 @@ class CompanyPage extends React.Component {
                     {employees.map((employee, id) => this.renderEmployee(employee, id))}
                     </tbody>
                 </table>
+                <Modal isOpen={this.state.modalIsOpen}
+                       onRequestClose={this.closeModal}
+                       style={customStyles}
+                       contentLabel="Example Modal">
+
+                    <div className="modal-header">
+                        <h5 className="modal-title">Salary Info</h5>
+                        <button type="button" className="close" data-dismiss="modal"
+                                onClick={this.closeModal.bind(this)}>
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div className="modal-body">
+                        The average salary in the "{company.name}" is {this.state.avgSalary}$
+                    </div>
+                </Modal>
             </div>
         )
     }
