@@ -11,6 +11,11 @@ pipeline {
         sh 'mvn test'
       }
     }
+    stage('Generate Report') {
+      steps {
+        junit '**/target/*.xml'
+      }
+    }
     stage('Deploy') {
       steps {
         sh 'mvn package'
