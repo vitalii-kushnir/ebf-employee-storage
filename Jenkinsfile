@@ -13,7 +13,7 @@ pipeline {
     }
     stage('Generate Report') {
       steps {
-        junit '**/target/*.xml'
+        junit '**/target/surefire-reports/*.xml'
       }
     }
     stage('Deploy') {
